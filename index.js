@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 
 app.use(express.static('./')); 
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const dbConfig = {
     user: 'sa', 
@@ -70,9 +70,9 @@ function calcularSemaforo(fechaVencimiento, estado, periodicidad) {
     return 'VERDE';
 }
 
-// Ruta raíz añadida para evitar el error Cannot GET /
+// Ruta raíz configurada para servir directamente la interfaz de Login
 app.get('/', (req, res) => {
-  res.json({ status: 'success', message: 'API de SGP Systems funcionando correctamente' });
+    res.sendFile(path.join(__dirname, 'login.html'));
 });
 
 app.post('/api/login', async (req, res) => {
