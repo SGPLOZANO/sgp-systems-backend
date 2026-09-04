@@ -1,0 +1,21 @@
+{
+  "name": "sgp-systems-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "mssql": "^12.7.0",
+    "multer": "^2.3.0",
+    "node-cron": "^4.6.0",
+    "xlsx": "^0.18.5"
+  }
+}

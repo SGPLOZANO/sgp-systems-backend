@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Transparencia - SGP SYSTEMS</title>
+    <!-- FontAwesome para los iconos de documentos y UI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Librerías para Exportación de Reportes Gerenciales (Excel & PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0f2027; color: #fff; min-height: 100vh; padding: 20px; }
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.05); padding: 20px 30px;
+            border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px); margin-bottom: 30px;
+        }
+        header h1 { color: #00d2ff; font-size: 24px; letter-spacing: 1px; font-weight: bold; }
+        #userInfo { font-size: 16px; color: #ccc; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .tabs-container { margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; gap: 15px; flex-wrap: wrap; }
+        .tab-btn { background: transparent; border: none; color: #888; font-size: 16px; font-weight: bold; padding: 10px 20px; cursor: pointer; transition: 0.3s; position: relative; }
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active { color: #00d2ff; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: #00d2ff; box-shadow: 0 0 10px #00d2ff; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .table-responsive { overflow-x: auto; background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; vertical-align: middle; }
+        th { color: #00d2ff; background: rgba(0, 0, 0, 0.2); }
+        
+        .badge { padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; display: inline-block; text-align: center; text-transform: uppercase; }
+        .ROJO { background: rgba(255, 76, 76, 0.15); color: #ff4c4c; border: 1px solid #ff4c4c; box-shadow: 0 0 8px rgba(255, 76, 76, 0.4); }
+        .AMARILLO { background: rgba(255, 204, 0, 0.15); color: #ffcc00; border: 1px solid #ffcc00; box-shadow: 0 0 8px rgba(255, 204, 0, 0.4); }
+        .VERDE { background: rgba(0, 255, 136, 0.15); color: #00ff88; border: 1px solid #00ff88; box-shadow: 0 0 8px rgba(0, 255, 136, 0.4); }
+        .CUMPLIDO { background: rgba(0, 191, 255, 0.15); color: #00bfff; border: 1px solid #00bfff; box-shadow: 0 0 8px rgba(0, 191, 255, 0.4); }
+
+        .portal-tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 4px; background: rgba(255, 255, 255, 0.1); }
+        .portal-pte { color: #00d2ff; border: 1px solid #00d2ff; }
+        .portal-pti { color: #ff007f; border: 1px solid #ff007f; }
+
+        .form-container { background: rgba(255, 255, 255, 0.03); padding: 30px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); max-width: 850px; margin: 0 auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: span 2; }
+        .form-group { margin-bottom: 15px; position: relative; }
+        .form-group label { display: block; margin-bottom: 6px; color: #ccc; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 5px; font-size: 14px; outline: none; transition: 0.3s; }
+        .form-group input:focus, .form-group select:focus { border-color: #00d2ff; box-shadow: 0 0 5px rgba(0, 210, 255, 0.5); }
+        .form-group option { background: #0f2027; color: #fff; }
+        .form-group input:disabled, .form-group select:disabled { background: rgba(0, 0, 0, 0.5); color: #666; border-color: rgba(255, 255, 255, 0.05); cursor: not-allowed; }
+
+        .dynamic-file-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+        .input-nombre-archivo { flex: 1; min-width: 180px; padding: 8px 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 5px; color: #fff; font-size: 13px; }
+        .input-file-adjunto { flex: 1; min-width: 200px; padding: 7px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 5px; color: #ccc; font-size: 13px; }
+        .btn-dinamico-add { background: #00ff88; color: #000; border: none; padding: 8px 14px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-dinamico-add:hover { background: #00cc6a; }
+        .btn-dinamico-remove { background: #ff4c4c; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+
+        .autocomplete-items { position: absolute; border: 1px solid rgba(0, 210, 255, 0.3); border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background: #142830; max-height: 200px; overflow-y: auto; border-radius: 0 0 5px 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .autocomplete-items div { padding: 10px 12px; cursor: pointer; color: #fff; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .autocomplete-items div:hover { background: rgba(0, 210, 255, 0.2); color: #00d2ff; }
+
+        .checkbox-group { display: flex; gap: 20px; align-items: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; border: 1px solid rgba(255,255,255,0.1); }
+        .checkbox-group label { margin-bottom: 0; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; }
+
+        .form-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-accion { background: #00d2ff; color: #000; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; font-size: 15px; }
+        .btn-accion:hover { background: #3a7bd5; color: #fff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.5); }
+        
+        .btn-action-outline {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); color: #ddd;
+            padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: all 0.2s ease-in-out; width: 100%; display: block; text-align: center; text-decoration: none; margin-bottom: 5px;
+        }
+        .btn-ver { border-color: #3498db; color: #3498db; }
+        .btn-ver:hover { background: #3498db; color: #fff; }
+        .btn-cumplir { border-color: #2ecc71; color: #2ecc71; }
+        .btn-cumplir:hover { background: #2ecc71; color: #fff; }
+        .btn-editar { border-color: #f1c40f; color: #f1c40f; }
+        .btn-editar:hover { background: #f1c40f; color: #000; }
+        .btn-eliminar { border-color: #e74c3c; color: #e74c3c; }
+        .btn-eliminar:hover { background: #e74c3c; color: #fff; }
+        .btn-detalle { border-color: #95a5a6; color: #ccc; }
+        .btn-detalle:hover { background: #95a5a6; color: #fff; }
+
+        .logout-btn { background: #ff4c4c; color: #fff; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-left: 15px; }
+        .acciones-td { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; flex-direction: column; }
+
+        /* Estilos Universales de Modales */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 32, 39, 0.85); backdrop-filter: blur(6px); z-index: 9999;
+            justify-content: center; align-items: center; animation: fadeIn 0.3s ease;
+        }
+        .custom-modal-box {
+            background: #142830; border: 1px solid rgba(0, 210, 255, 0.3); padding: 30px;
+            border-radius: 12px; max-width: 450px; width: 90%; text-align: center;
+            box-shadow: 0 0 25px rgba(0, 210, 255, 0.25);
+        }
+        .custom-modal-box p { color: #fff; font-size: 16px; margin-bottom: 25px; line-height: 1.5; }
+        .custom-modal-buttons { display: flex; gap: 12px; justify-content: center; }
+        .btn-modal-cancel { background: transparent; border: 1px solid #ff4c4c; color: #ff4c4c; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-modal-cancel:hover { background: rgba(255, 76, 76, 0.15); }
+        .btn-modal-confirm { background: #00d2ff; border: none; color: #000; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-modal-confirm:hover { background: #3a7bd5; color: #fff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.5); }
+    </style>
+</head>
+<body>
+    <!-- Modal de Confirmación del Sistema -->
+    <div id="customModalOverlay" class="modal-overlay">
+        <div class="custom-modal-box">
+            <p id="customModalMessage">Mensaje del sistema</p>
+            <div class="custom-modal-buttons">
+                <button id="customModalCancelBtn" class="btn-modal-cancel">Cancelar</button>
+                <button id="customModalConfirmBtn" class="btn-modal-confirm">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalles y Archivos -->
+    <div id="detalleModalOverlay" class="modal-overlay">
+        <div class="custom-modal-box" style="text-align: left;">
+            <h3 style="color: #00d2ff; margin-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; font-size: 18px;">Detalles y Acciones</h3>
+            <div id="detalleModalContenido" style="margin-bottom: 20px;"></div>
+            <div style="text-align: right;">
+                <button class="btn-modal-cancel" style="border-color: #95a5a6; color: #95a5a6;" onclick="cerrarModalDetalles()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Formulario de Oficinas -->
+    <div id="oficinaModalOverlay" class="modal-overlay">
+        <div class="custom-modal-box" style="max-width: 600px; text-align: left;">
+            <h3 style="color: #00d2ff; margin-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px;" id="tituloModalOficina">Agregar Nueva Oficina / Unidad</h3>
+            <form id="formOficina" onsubmit="guardarOficina(event)">
+                <input type="hidden" id="oficinaEditId">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Nombre de la Oficina/Unidad:</label>
+                        <input type="text" id="nombreOficina" required placeholder="Ej. OFICINA DE PLANEAMIENTO">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Responsable 1 (Opcional):</label>
+                        <input type="text" id="responsableOficina" placeholder="Ej. Ing. Juan Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono de Contacto (Opcional):</label>
+                        <input type="text" id="telefonoResponsable" placeholder="Ej. 987654321">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Nombre del Responsable 2 (Opcional):</label>
+                        <input type="text" id="responsable2" placeholder="Ej. Secretaria">
+                    </div>
+                </div>
+                <div class="form-actions" style="justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-modal-cancel" onclick="cerrarModalOficina()">Cancelar</button>
+                    <button type="submit" class="btn-accion" style="width: auto;" id="btnGuardarOficina">💾 Guardar Oficina</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Control de Transparencia</h1>
+            <div>
+                <span id="userInfo">Cargando usuario...</span>
+                <button class="logout-btn" onclick="cerrarSesion()">Salir</button>
+            </div>
+        </header>
+
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="cambiarPestana('pendientes', event)">Entregas Pendientes</button>
+            <button class="tab-btn" onclick="cambiarPestana('historial', event)">Historial de Cumplimiento</button>
+            <button id="btnTabOficinas" class="tab-btn" onclick="cambiarPestana('oficinas', event)">🏢 Gestión de Oficinas</button>
+            <button id="btnTabNueva" class="tab-btn" onclick="cambiarPestana('nueva', event)">➕ Crear Información</button>
+        </div>
+
+        <!-- TABLA: PENDIENTES CON FILTROS -->
+        <div id="tab-pendientes" class="tab-content active">
+            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                <input type="text" id="filtroTextoPendientes" placeholder="🔍 Buscar por título, número de documento o periodo..." style="flex: 2; min-width: 250px; padding: 10px 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 5px; font-size: 14px; outline: none;" oninput="renderizarPendientes()">
+                <select id="filtroOficinaPendientes" style="flex: 1; min-width: 220px; padding: 10px 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 5px; font-size: 14px; outline: none;" onchange="renderizarPendientes()">
+                    <option value="" style="background: #0f2027; color: #fff;">🏢 Todas las oficinas</option>
+                </select>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Portales</th>
+                            <th>Información / Reporte</th>
+                            <th>Oficina Responsable</th>
+                            <th>Documento Solicitud</th>
+                            <th>Periodo</th>
+                            <th>Frecuencia</th>
+                            <th>Vencimiento</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaPendientes">
+                        <tr><td colspan="9" style="text-align: center;">Cargando entregas pendientes...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TABLA: HISTORIAL CON FILTRO DE FECHAS Y EXPORTACIÓN GERENCIAL -->
+        <div id="tab-historial" class="tab-content">
+            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;">
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                    <div>
+                        <label style="display: block; font-size: 12px; color: #00d2ff; margin-bottom: 4px; font-weight: bold;">Fecha Inicio:</label>
+                        <input type="date" id="fechaInicioHistorial" style="padding: 9px 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 5px; font-size: 14px; outline: none;" onchange="renderizarHistorial()">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; color: #00d2ff; margin-bottom: 4px; font-weight: bold;">Fecha Fin:</label>
+                        <input type="date" id="fechaFinHistorial" style="padding: 9px 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 5px; font-size: 14px; outline: none;" onchange="renderizarHistorial()">
+                    </div>
+                    <button class="btn-action-outline btn-detalle" style="width: auto; height: 38px; padding: 0 15px; margin: 0;" onclick="limpiarFiltrosHistorial()">Limpiar Filtros</button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-accion" style="width: auto; background: #1D6F42; color: #fff; display: flex; align-items: center; gap: 6px;" onclick="exportarHistorialExcel()">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
+                    <button class="btn-accion" style="width: auto; background: #E74C3C; color: #fff; display: flex; align-items: center; gap: 6px;" onclick="exportarHistorialPDF()">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Portales</th>
+                            <th>Información / Reporte</th>
+                            <th>Oficina Responsable</th>
+                            <th>Documento</th>
+                            <th>Fecha Carga</th>
+                            <th>Usuario Gestión</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorial">
+                        <tr><td colspan="7" style="text-align: center;">Cargando historial...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TABLA: OFICINAS -->
+        <div id="tab-oficinas" class="tab-content">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;" id="contenedorBtnNuevaOficina">
+                <button class="btn-accion" style="width: auto;" onclick="abrirModalOficina()"><i class="fas fa-plus" style="margin-right: 8px;"></i> Agregar Nueva Oficina</button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Oficina / Unidad</th><th>Responsable 1 (Teléfono)</th><th>Responsable 2</th><th id="thAccionesOficina">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaOficinas">
+                        <tr><td colspan="5" style="text-align: center;">Cargando oficinas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FORMULARIO: CREAR NUEVA INFORMACIÓN -->
+        <div id="tab-nueva" class="tab-content">
+            <div class="form-container">
+                <h2 id="tituloFormNueva" style="margin-bottom: 20px; color: #00d2ff; font-size: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+                    Crear Información y Asignar Requerimiento
+                </h2>
+                <form id="formNuevaObligacion" onsubmit="guardarNuevaObligacion(event)">
+                    <input type="hidden" id="entregaEditId">
+                    <div class="form-group full-width">
+                        <label>Asignar Portal Destino (Mínimo uno obligatorio):</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="chkPTE"> Portal de Transparencia Estándar (PTE)</label>
+                            <label><input type="checkbox" id="chkPTI"> Portal Transparencia Institucional (PTI)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Título de la Información / Reporte:</label>
+                            <input type="text" id="nuevoTitulo" required placeholder="Ej. Reporte Trimestral...">
+                        </div>
+                        <div class="form-group">
+                            <label>Oficina Responsable:</label>
+                            <input type="hidden" id="nuevaOficinaId" required>
+                            <input type="text" id="buscadorOficina" placeholder="Digite para buscar oficina..." autocomplete="off">
+                            <div id="listaSugerenciasOficinas" class="autocomplete-items" style="display:none;"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Periodo de la Información:</label>
+                            <input type="text" id="periodoInfo" required placeholder="Ej. 2026-I / 2026-II">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Documento de Solicitud:</label>
+                            <select id="tipoDocumento" required onchange="gestionarTipoDocumento()">
+                                <option value="MEMORANDO">MEMORANDO</option>
+                                <option value="CORREO INSTITUCIONAL">CORREO INSTITUCIONAL</option>
+                                <option value="WHATSAPP">WHATSAPP</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>N° / Referencia de Documento:</label>
+                            <input type="text" id="numeroDocumento" placeholder="MEMORANDO-N°0001..." oninput="actualizarNombrePrimerArchivo()">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Solicitud:</label>
+                            <input type="date" id="fechaSolicitud" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Frecuencia de Envío:</label>
+                            <select id="nuevaPeriodicidad" required onchange="gestionarPeriodicidad()">
+                                <option value="">Seleccione periodicidad...</option>
+                                <option value="DIARIO">DIARIO</option>
+                                <option value="SEMANAL">SEMANAL</option>
+                                <option value="MENSUAL">MENSUAL</option>
+                                <option value="SEMESTRAL">SEMESTRAL</option>
+                                <option value="ANUAL">ANUAL</option>
+                                <option value="AUTOMATICO">AUTOMATICO</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Fecha Límite de Vencimiento:</label>
+                            <input type="date" id="nuevaFecha" required>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Enlace / Link del documento (Opcional):</label>
+                            <input type="text" id="enlaceInfo" placeholder="Ej. https://drive.google.com/...">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <div class="checkbox-group" style="margin-bottom: 10px;">
+                                <label><input type="checkbox" id="chkHabilitarArchivos" onchange="toggleSeccionArchivos()"> ¿Desea adjuntar documentos de sustento físicos?</label>
+                            </div>
+                            <div id="contenedorArchivosDinamicos" style="display: none; border: 1px dashed rgba(255,255,255,0.2); padding: 15px; border-radius: 5px; background: rgba(0,0,0,0.1);">
+                                <label style="margin-bottom: 8px; display: block; color: #00d2ff; font-size: 13px;">Formatos: PDF, Word, Excel (Máximo 3 archivos). Escribe un título descriptivo para cada archivo.</label>
+                                <div class="dynamic-file-row">
+                                    <input type="text" name="nombresArchivosUI" placeholder="Ej. Informe Financiero" class="input-nombre-archivo" required>
+                                    <input type="file" name="archivosDocumentos" class="input-file-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx" onchange="autocompletarNombreMemorando(this)">
+                                    <button type="button" class="btn-dinamico-add" onclick="agregarCampoArchivo()">+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-accion" id="btnGuardarEntrega">💾 Guardar Solicitud de Información</button>
+                        <button type="button" class="btn-action-outline btn-eliminar" id="btnCancelarEntrega" style="display:none; width: auto; padding: 12px 20px; border: 1px solid #e74c3c; margin: 0;" onclick="cancelarEdicionEntrega()">❌ Cancelar Edición</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const usuarioData = JSON.parse(localStorage.getItem('usuarioSGP')) || {};
+        const nombreUsuarioLogueado = usuarioData.Usuario || usuarioData.usuario || usuarioData.nombre || usuarioData.name || 'Usuario';
+        const rolUsuarioLogueado = usuarioData.Rol || usuarioData.rol || usuarioData.tipo || 'Usuario';
+        
+        let esAdministrador = false;
+        let listaOficinasGlobal = [];
+        let listaEntregasGlobal = [];
+        let listaHistorialGlobal = [];
+
+        if (!localStorage.getItem('usuarioSGP')) {
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('userInfo').textContent = `Usuario: ${nombreUsuarioLogueado} (${rolUsuarioLogueado})`;
+            esAdministrador = rolUsuarioLogueado.toLowerCase() === 'administrador';
+            if (!esAdministrador) {
+                document.getElementById('btnTabOficinas').style.display = 'none';
+                document.getElementById('btnTabNueva').style.display = 'none';
+                document.getElementById('contenedorBtnNuevaOficina').style.display = 'none';
+            }
+            cargarEntregasPendientes(); 
+        }
+
+        function abrirModalOficina(esEdicion = false) {
+            document.getElementById('tituloModalOficina').textContent = esEdicion ? 'Editar Oficina / Unidad' : 'Agregar Nueva Oficina / Unidad';
+            if(!esEdicion) {
+                document.getElementById('formOficina').reset();
+                document.getElementById('oficinaEditId').value = '';
+            }
+            document.getElementById('oficinaModalOverlay').style.display = 'flex';
+        }
+
+        function cerrarModalOficina() {
+            document.getElementById('oficinaModalOverlay').style.display = 'none';
+        }
+
+        function toggleSeccionArchivos() {
+            const chk = document.getElementById('chkHabilitarArchivos');
+            const contenedor = document.getElementById('contenedorArchivosDinamicos');
+            if (chk.checked) {
+                contenedor.style.display = 'block';
+            } else {
+                contenedor.style.display = 'none';
+                contenedor.innerHTML = `
+                    <label style="margin-bottom: 8px; display: block; color: #00d2ff; font-size: 13px;">Formatos: PDF, Word, Excel (Máximo 3 archivos). Escribe un título descriptivo para cada archivo.</label>
+                    <div class="dynamic-file-row">
+                        <input type="text" name="nombresArchivosUI" placeholder="Ej. Informe Financiero" class="input-nombre-archivo" required>
+                        <input type="file" name="archivosDocumentos" class="input-file-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx" onchange="autocompletarNombreMemorando(this)">
+                        <button type="button" class="btn-dinamico-add" onclick="agregarCampoArchivo()">+</button>
+                    </div>
+                `;
+            }
+        }
+
+        function agregarCampoArchivo() {
+            const contenedor = document.getElementById('contenedorArchivosDinamicos');
+            if (contenedor.querySelectorAll('.dynamic-file-row').length >= 3) {
+                return mostrarModal('Máximo 3 archivos en total.', 'Aceptar', false);
+            }
+            const nuevaFila = document.createElement('div');
+            nuevaFila.className = 'dynamic-file-row';
+            nuevaFila.innerHTML = `
+                <input type="text" name="nombresArchivosUI" placeholder="Ej. Anexo Adicional" class="input-nombre-archivo" required>
+                <input type="file" name="archivosDocumentos" class="input-file-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx" onchange="autocompletarNombreMemorando(this)">
+                <button type="button" class="btn-dinamico-remove" onclick="removerCampoArchivo(this)">-</button>
+            `;
+            contenedor.appendChild(nuevaFila);
+        }
+
+        function removerCampoArchivo(btn) { btn.parentElement.remove(); }
+
+        function autocompletarNombreMemorando(inputElement) {
+            if (inputElement.files && inputElement.files[0]) {
+                const nombre = inputElement.files[0].name.toLowerCase();
+                const validos = ['.pdf', '.doc', '.docx', '.xls', '.xlsx'];
+                if (!validos.some(ext => nombre.endsWith(ext))) {
+                    mostrarModal('Formato no válido. Solo PDF, Word o Excel.', 'Aceptar', false);
+                    inputElement.value = '';
+                    return;
+                }
+            }
+            const row = inputElement.closest('.dynamic-file-row');
+            if (!row) return; 
+            
+            const nameInput = row.querySelector('input[name="nombresArchivosUI"]');
+            if (!nameInput) return; 
+
+            const tipoDoc = document.getElementById('tipoDocumento').value;
+            const numDoc = document.getElementById('numeroDocumento').value;
+            const allRows = document.querySelectorAll('.dynamic-file-row');
+            
+            if (allRows[0] === row && tipoDoc === 'MEMORANDO' && numDoc.trim() !== '') {
+                nameInput.value = numDoc;
+                nameInput.readOnly = true;
+                nameInput.style.opacity = '0.7';
+            } else if (!nameInput.value && inputElement.files && inputElement.files[0]) {
+                nameInput.value = inputElement.files[0].name.replace(/\.[^/.]+$/, "");
+                nameInput.readOnly = false;
+                nameInput.style.opacity = '1';
+            }
+        }
+
+        function actualizarNombrePrimerArchivo() {
+            const tipoDoc = document.getElementById('tipoDocumento').value;
+            const numDoc = document.getElementById('numeroDocumento').value;
+            const allRows = document.querySelectorAll('.dynamic-file-row');
+            if (allRows.length > 0) {
+                const primerNombre = allRows[0].querySelector('input[name="nombresArchivosUI"]');
+                const primerArchivo = allRows[0].querySelector('input[name="archivosDocumentos"]');
+                if (primerNombre) {
+                    if (tipoDoc === 'MEMORANDO' && numDoc.trim() !== '') {
+                        primerNombre.value = numDoc;
+                        primerNombre.readOnly = true;
+                        primerNombre.style.opacity = '0.7';
+                    } else {
+                        if (primerNombre.readOnly) {
+                            primerNombre.value = '';
+                            primerNombre.readOnly = false;
+                            primerNombre.style.opacity = '1';
+                            if (primerArchivo) primerArchivo.value = ''; 
+                        }
+                    }
+                }
+            }
+        }
+
+        function calcularSemaforoSemestral(fechaVencimientoStr) {
+            const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+            const venc = new Date(fechaVencimientoStr); venc.setHours(0, 0, 0, 0);
+            if (hoy > venc) return 'ROJO';
+            const inicio = new Date(venc); inicio.setMonth(inicio.getMonth() - 6); inicio.setDate(inicio.getDate() + 1);
+            if (hoy.getFullYear() === venc.getFullYear() && hoy.getMonth() === venc.getMonth()) {
+                return hoy.getDate() >= 21 ? 'ROJO' : 'AMARILLO';
+            }
+            return 'VERDE';
+        }
+
+        function mostrarModal(mensaje, textoConfirmar = "Aceptar", mostrarCancelar = true) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('customModalOverlay');
+                document.getElementById('customModalMessage').textContent = mensaje;
+                document.getElementById('customModalConfirmBtn').textContent = textoConfirmar;
+                document.getElementById('customModalCancelBtn').style.display = mostrarCancelar ? 'inline-block' : 'none';
+                overlay.style.display = 'flex';
+                const cerrar = (res) => { overlay.style.display = 'none'; resolve(res); };
+                document.getElementById('customModalConfirmBtn').onclick = () => cerrar(true);
+                document.getElementById('customModalCancelBtn').onclick = () => cerrar(false);
+            });
+        }
+
+        function abrirModalDetalles(id) {
+            const item = listaEntregasGlobal.find(e => e.Id === id);
+            if (!item) return;
+
+            let htmlLinks = '';
+            if (item.Url) {
+                let urls = item.Url.split(',');
+                htmlLinks = urls.map(u => {
+                    let urlParts = u.split('|');
+                    let nombre = urlParts.length > 1 ? urlParts[0] : (u.startsWith('http') ? 'Ver enlace de la Información' : 'Documento Adjunto');
+                    let ruta = urlParts.length > 1 ? urlParts[1] : urlParts[0];
+                    let icono = '<i class="fas fa-file" style="color: #94a3b8; font-size: 16px; width: 22px; text-align: center;"></i>';
+                    let rutaLower = ruta.toLowerCase();
+                    if (rutaLower.endsWith('.pdf')) icono = '<i class="fas fa-file-pdf" style="color: #f87171; font-size: 16px; width: 22px; text-align: center;"></i>';
+                    else if (rutaLower.endsWith('.doc') || rutaLower.endsWith('.docx')) icono = '<i class="fas fa-file-word" style="color: #60a5fa; font-size: 16px; width: 22px; text-align: center;"></i>';
+                    else if (rutaLower.endsWith('.xls') || rutaLower.endsWith('.xlsx')) icono = '<i class="fas fa-file-excel" style="color: #34d399; font-size: 16px; width: 22px; text-align: center;"></i>';
+                    else if (rutaLower.startsWith('http')) icono = '<i class="fas fa-link" style="color: #38bdf8; font-size: 16px; width: 22px; text-align: center;"></i>';
+
+                    return `<a href="${ruta}" target="_blank" class="btn-action-outline btn-ver" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 10px 14px; background-color: #111e38; border: 1px solid #1e3a8a; color: #e2e8f0; border-radius: 6px; text-decoration: none; font-size: 13px; transition: all 0.2s ease;">${icono} <span>${nombre}</span></a>`;
+                }).join('');
+            } else {
+                htmlLinks = `<p style="color: #888; font-size: 13px; text-align: center; margin-bottom: 10px;">No hay documentos ni enlaces adjuntos.</p>`;
+            }
+
+            let htmlAdmin = '';
+            if (esAdministrador) {
+                htmlAdmin = `
+                    <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 15px; padding-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn-action-outline btn-editar" style="flex: 1;" onclick="cerrarModalDetalles(); editarEntrega(${item.Id})"><i class="fas fa-pen" style="margin-right: 5px;"></i> Editar</button>
+                        <button class="btn-action-outline btn-eliminar" style="flex: 1;" onclick="cerrarModalDetalles(); eliminarEntrega(${item.Id})"><i class="fas fa-trash-alt" style="margin-right: 5px;"></i> Eliminar</button>
+                    </div>
+                `;
+            }
+
+            document.getElementById('detalleModalContenido').innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #ccc; font-size: 14px; display: block; margin-bottom: 12px;">Documentos y Enlaces de Sustento:</strong>
+                    ${htmlLinks}
+                </div>
+                ${htmlAdmin}
+            `;
+            document.getElementById('detalleModalOverlay').style.display = 'flex';
+        }
+
+        function cerrarModalDetalles() { document.getElementById('detalleModalOverlay').style.display = 'none'; }
+
+        function obtenerHeaders(esMultipart = false) {
+            const headers = { 'x-user-rol': rolUsuarioLogueado, 'x-user-name': nombreUsuarioLogueado };
+            if (!esMultipart) headers['Content-Type'] = 'application/json';
+            return headers;
+        }
+
+        function cerrarSesion() { localStorage.removeItem('usuarioSGP'); window.location.href = 'login.html'; }
+
+        function cambiarPestana(pestana, event) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${pestana}`).classList.add('active');
+            if (event) event.currentTarget.classList.add('active');
+            if (pestana === 'historial') cargarHistorial();
+            if (pestana === 'pendientes') cargarEntregasPendientes();
+            if (pestana === 'oficinas') cargarTablaOficinas();
+            if (pestana === 'nueva') { cargarOficinasSelector(); gestionarTipoDocumento(); }
+        }
+
+        function gestionarTipoDocumento() {
+            const tipo = document.getElementById('tipoDocumento').value;
+            const inputNum = document.getElementById('numeroDocumento');
+            if (tipo === 'MEMORANDO' && (!inputNum.value || !inputNum.value.includes('MEMORANDO-N°'))) {
+                inputNum.value = 'MEMORANDO-N°0001-2026-UNSCH-OTI';
+            } else if(tipo !== 'MEMORANDO') inputNum.value = '';
+            actualizarNombrePrimerArchivo();
+        }
+
+        function gestionarPeriodicidad() {
+            const val = document.getElementById('nuevaPeriodicidad').value;
+            const elements = ['periodoInfo', 'tipoDocumento', 'numeroDocumento', 'fechaSolicitud', 'nuevaFecha'];
+            if (val === 'AUTOMATICO') {
+                document.getElementById('periodoInfo').value = 'N/A';
+                document.getElementById('tipoDocumento').value = 'MEMORANDO';
+                document.getElementById('numeroDocumento').value = 'AUTO';
+                const hoy = new Date().toISOString().split('T')[0];
+                document.getElementById('fechaSolicitud').value = hoy;
+                document.getElementById('nuevaFecha').value = hoy;
+                elements.forEach(id => { document.getElementById(id).disabled = true; document.getElementById(id).removeAttribute('required'); });
+            } else {
+                elements.forEach(id => { document.getElementById(id).disabled = false; document.getElementById(id).setAttribute('required', 'true'); });
+            }
+            actualizarNombrePrimerArchivo();
+        }
+
+        async function cargarOficinasSelector() {
+            try {
+                const res = await fetch('http://localhost:3000/api/oficinas');
+                listaOficinasGlobal = await res.json();
+                configurarBuscadorOficinas();
+            } catch (err) { console.error("Error al cargar selector de oficinas:", err); }
+        }
+
+        function configurarBuscadorOficinas() {
+            const inputBuscador = document.getElementById('buscadorOficina');
+            const inputId = document.getElementById('nuevaOficinaId');
+            const cont = document.getElementById('listaSugerenciasOficinas');
+
+            inputBuscador.oninput = function() {
+                cont.innerHTML = ''; inputId.value = '';
+                const valor = this.value.toLowerCase();
+                if (!valor) return cont.style.display = 'none';
+
+                const filtradas = listaOficinasGlobal.filter(o => o.NombreOficina.toLowerCase().includes(valor));
+                if (filtradas.length > 0) {
+                    filtradas.forEach(o => {
+                        const div = document.createElement('div'); div.textContent = o.NombreOficina;
+                        div.onclick = () => { inputBuscador.value = o.NombreOficina; inputId.value = o.Id; cont.style.display = 'none'; };
+                        cont.appendChild(div);
+                    });
+                } else {
+                    const div = document.createElement('div'); div.textContent = 'No encontradas'; div.style.color = '#888'; cont.appendChild(div);
+                }
+                cont.style.display = 'block';
+            };
+            document.addEventListener('click', e => { if (e.target !== inputBuscador && e.target !== cont) cont.style.display = 'none'; });
+        }
+
+        async function cargarTablaOficinas() {
+            try {
+                const res = await fetch('http://localhost:3000/api/oficinas');
+                listaOficinasGlobal = await res.json();
+                const tbody = document.getElementById('tablaOficinas'); tbody.innerHTML = '';
+                listaOficinasGlobal.forEach(o => {
+                    const htmlAcciones = esAdministrador ? `
+                        <td class="acciones-td" style="flex-direction:row;">
+                            <button class="btn-action-outline btn-editar" style="margin:0;" onclick="editarOficina(${o.Id})">Editar</button>
+                            <button class="btn-action-outline btn-eliminar" style="margin:0;" onclick="eliminarOficina(${o.Id})">Eliminar</button>
+                        </td>` : '';
+                    
+                    const formatoTelefono = o.TelefonoResponsable ? `<br><small style="color: #aaa; display: inline-flex; align-items: center; margin-top: 4px;"><i class="fas fa-phone-alt" style="color: #00d2ff; margin-right: 6px; font-size: 11px;"></i>${o.TelefonoResponsable}</small>` : '';
+                    
+                    tbody.innerHTML += `<tr>
+                        <td>${o.Id}</td>
+                        <td><b>${o.NombreOficina}</b></td>
+                        <td>${o.Responsable || '-'}${formatoTelefono}</td>
+                        <td>${o.Responsable2 || '-'}</td>
+                        ${htmlAcciones}
+                    </tr>`;
+                });
+            } catch (err) { console.error("Error al cargar tabla de oficinas:", err); }
+        }
+
+        async function guardarOficina(e) {
+            e.preventDefault();
+            if (!esAdministrador) return;
+            const id = document.getElementById('oficinaEditId').value;
+            const payload = {
+                nombreOficina: document.getElementById('nombreOficina').value,
+                responsable: document.getElementById('responsableOficina').value,
+                telefonoResponsable: document.getElementById('telefonoResponsable').value,
+                responsable2: document.getElementById('responsable2').value
+            };
+            try {
+                await fetch(id ? `http://localhost:3000/api/oficinas/${id}` : 'http://localhost:3000/api/oficinas', { 
+                    method: id ? 'PUT' : 'POST', 
+                    headers: obtenerHeaders(), 
+                    body: JSON.stringify(payload) 
+                });
+                cerrarModalOficina(); 
+                cargarTablaOficinas();
+            } catch (error) {
+                console.error("Error al guardar oficina:", error);
+                mostrarModal('Error de conexión al intentar guardar la oficina.', 'Aceptar', false);
+            }
+        }
+
+        function editarOficina(id) {
+            const o = listaOficinasGlobal.find(of => of.Id === id);
+            if(!o) return;
+            document.getElementById('oficinaEditId').value = o.Id;
+            document.getElementById('nombreOficina').value = o.NombreOficina || '';
+            document.getElementById('responsableOficina').value = o.Responsable || '';
+            document.getElementById('telefonoResponsable').value = o.TelefonoResponsable || '';
+            document.getElementById('responsable2').value = o.Responsable2 || '';
+            abrirModalOficina(true);
+        }
+        
+        async function eliminarOficina(id) {
+            if (await mostrarModal("¿Deshabilitar oficina?", "Sí", true)) {
+                try {
+                    await fetch(`http://localhost:3000/api/oficinas/${id}`, { method: 'DELETE', headers: obtenerHeaders() });
+                    cargarTablaOficinas();
+                } catch (error) {
+                    console.error("Error al eliminar oficina:", error);
+                    mostrarModal('Error de conexión al intentar eliminar.', 'Aceptar', false);
+                }
+            }
+        }
+
+        async function cargarEntregasPendientes() {
+            try {
+                const res = await fetch('http://localhost:3000/api/entregas/pendientes');
+                const data = await res.json();
+                if (data.success && data.entregas.length > 0) {
+                    listaEntregasGlobal = data.entregas;
+                    poblarFiltroOficinasPendientes();
+                    renderizarPendientes();
+                } else {
+                    listaEntregasGlobal = [];
+                    document.getElementById('tablaPendientes').innerHTML = `<tr><td colspan="9" style="text-align: center;">No hay entregas pendientes.</td></tr>`;
+                }
+            } catch (err) { 
+                console.error("Error al cargar entregas pendientes:", err); 
+                document.getElementById('tablaPendientes').innerHTML = `<tr><td colspan="9" style="text-align: center; color: #ff4c4c;">Error de conexión con el servidor. Verifica que Node.js esté en ejecución.</td></tr>`;
+            }
+        }
+
+        function poblarFiltroOficinasPendientes() {
+            const select = document.getElementById('filtroOficinaPendientes');
+            const valorActual = select.value;
+            const oficinasUnicas = [...new Set(listaEntregasGlobal.map(e => e.NombreOficina))].filter(Boolean).sort();
+            
+            select.innerHTML = `<option value="" style="background: #0f2027; color: #fff;">🏢 Todas las oficinas</option>`;
+            oficinasUnicas.forEach(of => {
+                select.innerHTML += `<option value="${of}" style="background: #0f2027; color: #fff;">${of}</option>`;
+            });
+            select.value = valorActual;
+        }
+
+        function renderizarPendientes() {
+            const textoFiltro = document.getElementById('filtroTextoPendientes').value.toLowerCase();
+            const oficinaFiltro = document.getElementById('filtroOficinaPendientes').value;
+            const tbody = document.getElementById('tablaPendientes');
+            tbody.innerHTML = '';
+
+            const filtradas = listaEntregasGlobal.filter(item => {
+                const matchTexto = (
+                    (item.TituloInformacion && item.TituloInformacion.toLowerCase().includes(textoFiltro)) ||
+                    (item.NumeroDocumento && item.NumeroDocumento.toLowerCase().includes(textoFiltro)) ||
+                    (item.TipoDocumento && item.TipoDocumento.toLowerCase().includes(textoFiltro)) ||
+                    (item.PeriodoInformacion && item.PeriodoInformacion.toLowerCase().includes(textoFiltro))
+                );
+                const matchOficina = !oficinaFiltro || item.NombreOficina === oficinaFiltro;
+                return matchTexto && matchOficina;
+            });
+
+            if (filtradas.length > 0) {
+                filtradas.forEach(item => {
+                    const fVenc = item.FechaVencimiento ? new Date(item.FechaVencimiento).toLocaleDateString('es-ES', { timeZone: 'UTC' }) : 'Auto';
+                    const semaforo = item.FechaVencimiento ? calcularSemaforoSemestral(item.FechaVencimiento.split('T')[0]) : 'CUMPLIDO';
+                    
+                    const htmlAcciones = `
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <button class="btn-action-outline btn-cumplir" onclick="registrarCarga(${item.Id})">✅ Cumplir</button>
+                            <button class="btn-action-outline btn-detalle" onclick="abrirModalDetalles(${item.Id})">👁️ Ver Detalle</button>
+                        </div>
+                    `;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.PortalPTE ? '<span class="portal-tag portal-pte">PTE</span>' : ''}${item.PortalPTI ? '<span class="portal-tag portal-pti">PTI</span>' : ''}</td>
+                            <td><b>${item.TituloInformacion}</b></td>
+                            <td>${item.NombreOficina}</td>
+                            <td><small>${item.TipoDocumento || 'AUTO'}:<br>${item.NumeroDocumento || '-'}</small></td>
+                            <td>${item.PeriodoInformacion || 'N/A'}</td><td>${item.Periodicidad}</td><td>${fVenc}</td>
+                            <td><span class="badge ${semaforo}">${semaforo}</span></td>
+                            <td class="acciones-td">${htmlAcciones}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #888;">No se encontraron entregas con los filtros aplicados.</td></tr>`;
+            }
+        }
+
+        async function registrarCarga(id) {
+            if (await mostrarModal("¿Confirmar cumplimiento y reprogramar?", "Confirmar", true)) {
+                try {
+                    await fetch('http://localhost:3000/api/entregas/cargar', { 
+                        method: 'POST', 
+                        headers: obtenerHeaders(), 
+                        body: JSON.stringify({ entregaId: id }) 
+                    });
+                    cargarEntregasPendientes();
+                } catch (error) {
+                    console.error("Error al registrar carga:", error);
+                    mostrarModal('Error de conexión al intentar confirmar el cumplimiento.', 'Aceptar', false);
+                }
+            }
+        }
+
+        async function guardarNuevaObligacion(e) {
+            e.preventDefault();
+            if (!esAdministrador) return;
+            if (!document.getElementById('chkPTE').checked && !document.getElementById('chkPTI').checked) return mostrarModal('Seleccione PTE o PTI.', 'OK', false);
+            const ofId = document.getElementById('nuevaOficinaId').value;
+            if (!ofId) return mostrarModal('Seleccione oficina.', 'OK', false);
+
+            const id = document.getElementById('entregaEditId').value;
+            const formData = new FormData();
+            formData.append('portalPTE', document.getElementById('chkPTE').checked);
+            formData.append('portalPTI', document.getElementById('chkPTI').checked);
+            formData.append('tituloInformacion', document.getElementById('nuevoTitulo').value);
+            formData.append('oficinaId', ofId);
+            formData.append('periodoInformacion', document.getElementById('periodoInfo').value);
+            formData.append('tipoDocumento', document.getElementById('tipoDocumento').value);
+            formData.append('numeroDocumento', document.getElementById('numeroDocumento').value);
+            formData.append('fechaSolicitud', document.getElementById('fechaSolicitud').value);
+            formData.append('periodicidad', document.getElementById('nuevaPeriodicidad').value);
+            formData.append('fechaVencimiento', document.getElementById('nuevaFecha').value);
+            formData.append('enlace', document.getElementById('enlaceInfo').value);
+
+            if (document.getElementById('chkHabilitarArchivos').checked) {
+                const fileInputs = document.querySelectorAll('input[name="archivosDocumentos"]');
+                const nameInputs = document.querySelectorAll('input[name="nombresArchivosUI"]');
+                fileInputs.forEach((inp, index) => { 
+                    if (inp.files[0]) {
+                        formData.append('archivosDocumentos', inp.files[0]);
+                        formData.append('nombresArchivos', nameInputs[index].value || `Documento ${index + 1}`);
+                    } 
+                });
+            }
+
+            try {
+                await fetch(id ? `http://localhost:3000/api/entregas/${id}` : 'http://localhost:3000/api/entregas/nueva', { 
+                    method: id ? 'PUT' : 'POST', 
+                    headers: obtenerHeaders(true), 
+                    body: formData 
+                });
+                cancelarEdicionEntrega();
+                cambiarPestana('pendientes');
+            } catch (error) {
+                console.error("Error al guardar obligación:", error);
+                mostrarModal('Error de conexión al intentar guardar la obligación.', 'Aceptar', false);
+            }
+        }
+
+        function editarEntrega(id) {
+            const item = listaEntregasGlobal.find(e => e.Id === id);
+            if (!item) return;
+            cambiarPestana('nueva');
+            
+            document.getElementById('entregaEditId').value = item.Id;
+            document.getElementById('chkPTE').checked = item.PortalPTE;
+            document.getElementById('chkPTI').checked = item.PortalPTI;
+            document.getElementById('nuevoTitulo').value = item.TituloInformacion;
+            document.getElementById('nuevaPeriodicidad').value = item.Periodicidad;
+            gestionarPeriodicidad();
+
+            if (item.Periodicidad !== 'AUTOMATICO') {
+                document.getElementById('periodoInfo').value = item.PeriodoInformacion || '';
+                document.getElementById('tipoDocumento').value = item.TipoDocumento || 'MEMORANDO';
+                document.getElementById('numeroDocumento').value = item.NumeroDocumento || '';
+                if(item.FechaSolicitud) document.getElementById('fechaSolicitud').value = item.FechaSolicitud.split('T')[0];
+                if(item.FechaVencimiento) document.getElementById('nuevaFecha').value = item.FechaVencimiento.split('T')[0];
+            }
+
+            document.getElementById('enlaceInfo').value = '';
+            const chkArchivos = document.getElementById('chkHabilitarArchivos');
+            const contenedorArchivos = document.getElementById('contenedorArchivosDinamicos');
+            contenedorArchivos.innerHTML = '<label style="margin-bottom: 8px; display: block; color: #00d2ff; font-size: 13px;">Formatos: PDF, Word, Excel (Máximo 3 archivos). Escribe un título descriptivo para cada archivo.</label>';
+
+            let tieneArchivosFisicos = false;
+            if (item.Url) {
+                let urls = item.Url.split(',').map(u => u.trim());
+                let linkWeb = urls.find(u => u.includes('http') || u.includes('www'));
+                if (linkWeb) document.getElementById('enlaceInfo').value = linkWeb.includes('|') ? linkWeb.split('|')[1] : linkWeb;
+
+                let archivosFisicos = urls.filter(u => !u.includes('http') && !u.includes('www'));
+                if (archivosFisicos.length > 0) {
+                    tieneArchivosFisicos = true;
+                    chkArchivos.checked = true;
+                    contenedorArchivos.style.display = 'block';
+
+                    archivosFisicos.forEach((archivoStr, index) => {
+                        let partes = archivoStr.split('|');
+                        let nombreArchivo = partes[0];
+                        let rutaArchivo = partes.length > 1 ? partes[1] : partes[0];
+                        let linkDescarga = rutaArchivo.startsWith('http') ? rutaArchivo : `http://localhost:3000/${rutaArchivo.startsWith('uploads') ? rutaArchivo : 'uploads/' + rutaArchivo}`;
+                        let esMemorando = (index === 0 && item.TipoDocumento === 'MEMORANDO');
+
+                        const nuevaFila = document.createElement('div');
+                        nuevaFila.className = 'dynamic-file-row';
+                        nuevaFila.innerHTML = `
+                            <input type="text" name="nombresArchivosUI" value="${nombreArchivo}" class="input-nombre-archivo" required ${esMemorando ? 'readonly style="opacity:0.7;"' : ''}>
+                            <input type="file" name="archivosDocumentos" class="input-file-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx" onchange="autocompletarNombreMemorando(this)">
+                            <a href="${linkDescarga}" target="_blank" class="btn-action-outline btn-ver" style="padding: 7px 10px; margin: 0; font-size: 12px; text-decoration: none; display: inline-block; white-space: nowrap;" title="Ver archivo actual">👁️ Ver actual</a>
+                            ${index === 0 ? '<button type="button" class="btn-dinamico-add" onclick="agregarCampoArchivo()">+</button>' : '<button type="button" class="btn-dinamico-remove" onclick="removerCampoArchivo(this)">-</button>'}
+                        `;
+                        contenedorArchivos.appendChild(nuevaFila);
+                    });
+                }
+            }
+
+            if (!tieneArchivosFisicos) {
+                chkArchivos.checked = false;
+                contenedorArchivos.style.display = 'none';
+                contenedorArchivos.innerHTML += `
+                    <div class="dynamic-file-row">
+                        <input type="text" name="nombresArchivosUI" placeholder="Ej. Informe Financiero" class="input-nombre-archivo" required>
+                        <input type="file" name="archivosDocumentos" class="input-file-adjunto" accept=".pdf,.doc,.docx,.xls,.xlsx" onchange="autocompletarNombreMemorando(this)">
+                        <button type="button" class="btn-dinamico-add" onclick="agregarCampoArchivo()">+</button>
+                    </div>
+                `;
+            }
+
+            actualizarNombrePrimerArchivo();
+
+            setTimeout(() => { document.getElementById('nuevaOficinaId').value = item.OficinaId; document.getElementById('buscadorOficina').value = item.NombreOficina; }, 300);
+            document.getElementById('btnCancelarEntrega').style.display = 'inline-block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelarEdicionEntrega() {
+            document.getElementById('formNuevaObligacion').reset();
+            document.getElementById('entregaEditId').value = '';
+            document.getElementById('nuevaOficinaId').value = '';
+            document.getElementById('chkHabilitarArchivos').checked = false;
+            toggleSeccionArchivos();
+            gestionarPeriodicidad();
+            document.getElementById('btnCancelarEntrega').style.display = 'none';
+        }
+
+        async function eliminarEntrega(id) {
+            if (await mostrarModal("¿Eliminar permanentemente?", "Sí", true)) {
+                try {
+                    await fetch(`http://localhost:3000/api/entregas/${id}`, { method: 'DELETE', headers: obtenerHeaders() });
+                    cargarEntregasPendientes();
+                } catch (error) {
+                    console.error("Error al eliminar entrega:", error);
+                    mostrarModal('Error de conexión al intentar eliminar el registro.', 'Aceptar', false);
+                }
+            }
+        }
+
+        /* LÓGICA DE HISTORIAL, FILTRADO POR FECHAS Y EXPORTACIÓN GERENCIAL */
+        async function cargarHistorial() {
+            try {
+                const res = await fetch('http://localhost:3000/api/entregas/historial');
+                const data = await res.json();
+                if (data.success && data.entregas.length > 0) {
+                    listaHistorialGlobal = data.entregas;
+                    renderizarHistorial();
+                } else {
+                    listaHistorialGlobal = [];
+                    document.getElementById('tablaHistorial').innerHTML = `<tr><td colspan="7" style="text-align: center;">Sin historial de cumplimiento.</td></tr>`;
+                }
+            } catch(e) { 
+                console.error("Error al cargar historial:", e); 
+                document.getElementById('tablaHistorial').innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ff4c4c;">Error de conexión con el servidor.</td></tr>`;
+            }
+        }
+
+        function obtenerHistorialFiltrado() {
+            const fInicioStr = document.getElementById('fechaInicioHistorial').value;
+            const fFinStr = document.getElementById('fechaFinHistorial').value;
+
+            return listaHistorialGlobal.filter(item => {
+                if (!item.FechaCarga) return true;
+                const fechaItem = new Date(item.FechaCarga);
+                
+                if (fInicioStr) {
+                    const fInicio = new Date(fInicioStr + 'T00:00:00');
+                    if (fechaItem < fInicio) return false;
+                }
+                if (fFinStr) {
+                    const fFin = new Date(fFinStr + 'T23:59:59');
+                    if (fechaItem > fFin) return false;
+                }
+                return true;
+            });
+        }
+
+        function renderizarHistorial() {
+            const tbody = document.getElementById('tablaHistorial');
+            tbody.innerHTML = '';
+            const filtrados = obtenerHistorialFiltrado();
+
+            if (filtrados.length > 0) {
+                filtrados.forEach(item => {
+                    const fCarga = item.FechaCarga ? new Date(item.FechaCarga).toLocaleString('es-ES') : '-';
+                    tbody.innerHTML += `<tr>
+                        <td>${item.PortalPTE ? '<span class="portal-tag portal-pte">PTE</span>' : ''}${item.PortalPTI ? '<span class="portal-tag portal-pti">PTI</span>' : ''}</td>
+                        <td><b>${item.TituloInformacion}</b></td>
+                        <td>${item.NombreOficina}</td>
+                        <td><small>${item.TipoDocumento || 'AUTO'}:<br>${item.NumeroDocumento || '-'}</small></td>
+                        <td>${fCarga}</td><td><b>${item.UsuarioGestion || '-'}</b></td>
+                        <td><span class="badge CUMPLIDO">CUMPLIDO</span></td>
+                    </tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #888;">No se encontraron registros de auditoría en este rango de fechas.</td></tr>`;
+            }
+        }
+
+        function limpiarFiltrosHistorial() {
+            document.getElementById('fechaInicioHistorial').value = '';
+            document.getElementById('fechaFinHistorial').value = '';
+            renderizarHistorial();
+        }
+
+        function exportarHistorialExcel() {
+            const datos = obtenerHistorialFiltrado();
+            if (datos.length === 0) {
+                return mostrarModal("No existen registros en el rango seleccionado para exportar.", "Aceptar", false);
+            }
+
+            const dataToExport = datos.map(item => ({
+                'ID': item.Id,
+                'Portales': `${item.PortalPTE ? 'PTE ' : ''}${item.PortalPTI ? 'PTI' : ''}`.trim(),
+                'Información / Reporte': item.TituloInformacion,
+                'Oficina Responsable': item.NombreOficina,
+                'Tipo Documento': item.TipoDocumento || 'AUTO',
+                'N° Documento': item.NumeroDocumento || '-',
+                'Fecha de Carga/Cumplimiento': item.FechaCarga ? new Date(item.FechaCarga).toLocaleString('es-ES') : '-',
+                'Usuario Gestión': item.UsuarioGestion || '-',
+                'Estado': 'CUMPLIDO'
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Auditoría Cumplimiento");
+            
+            XLSX.writeFile(wb, `SGP_SYSTEMS_Reporte_Gerencial_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function exportarHistorialPDF() {
+            const datos = obtenerHistorialFiltrado();
+            if (datos.length === 0) {
+                return mostrarModal("No existen registros en el rango seleccionado para exportar.", "Aceptar", false);
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape');
+
+            doc.setFontSize(16);
+            doc.setTextColor(0, 210, 255);
+            doc.text("SGP SYSTEMS - Reporte Gerencial de Cumplimiento", 14, 15);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            const fInicioStr = document.getElementById('fechaInicioHistorial').value || 'Histórico Global';
+            const fFinStr = document.getElementById('fechaFinHistorial').value || 'Hasta la fecha';
+            doc.text(`Periodo Auditado: ${fInicioStr} a ${fFinStr} | Emitido: ${new Date().toLocaleDateString('es-ES')}`, 14, 22);
+
+            const tableColumn = ["ID", "Portales", "Información / Reporte", "Oficina Responsable", "Documento", "Fecha Carga", "Usuario"];
+            const tableRows = [];
+
+            datos.forEach(item => {
+                const row = [
+                    item.Id,
+                    `${item.PortalPTE ? 'PTE ' : ''}${item.PortalPTI ? 'PTI' : ''}`.trim(),
+                    item.TituloInformacion,
+                    item.NombreOficina,
+                    `${item.TipoDocumento || 'AUTO'}: ${item.NumeroDocumento || '-'}`,
+                    item.FechaCarga ? new Date(item.FechaCarga).toLocaleDateString('es-ES') : '-',
+                    item.UsuarioGestion || '-'
+                ];
+                tableRows.push(row);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 28,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 30, 38], textColor: [0, 210, 255], fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [240, 244, 248] },
+                styles: { fontSize: 8, cellPadding: 3, color: [30, 30, 30] }
+            });
+
+            doc.save(`SGP_SYSTEMS_Reporte_Gerencial_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+    </script>
+</body>
+</html>
