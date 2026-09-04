@@ -70,6 +70,11 @@ function calcularSemaforo(fechaVencimiento, estado, periodicidad) {
     return 'VERDE';
 }
 
+// Ruta raíz añadida para evitar el error Cannot GET /
+app.get('/', (req, res) => {
+  res.json({ status: 'success', message: 'API de SGP Systems funcionando correctamente' });
+});
+
 app.post('/api/login', async (req, res) => {
     const usuario = req.body.usuario || req.body.username;
     const contrasena = req.body.contrasena || req.body.password;
