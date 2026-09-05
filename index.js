@@ -13,10 +13,10 @@ app.use(express.static('./'));
 const PORT = process.env.PORT || 3000;
 
 const dbConfig = {
-    user: 'sa', // Nota de QA: Azure restringe usar 'sa' por defecto. Si te rechaza el login, reemplázalo por el usuario administrador que creaste en Azure.
-    password: 'Sviet11062023*', 
-    server: 'sgp-systems-db-server.database.windows.net',
-    database: 'SistemaTransparencia',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER,
+    database: process.env.DB_NAME,
     options: {
         encrypt: true, 
         trustServerCertificate: false 
