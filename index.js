@@ -13,13 +13,13 @@ app.use(express.static('./'));
 const PORT = process.env.PORT || 3000;
 
 const dbConfig = {
-    user: 'sa', 
-    password: 'Sviet11062023*', 
-    server: 'localhost',
-    database: 'SistemaTransparencia',
+    user: process.env.DB_USER || 'sa',
+    password: process.env.DB_PASSWORD || 'Sviet11062023*',
+    server: process.env.DB_SERVER || 'localhost',
+    database: process.env.DB_NAME || 'SistemaTransparencia',
     options: {
-        encrypt: false,
-        trustServerCertificate: true
+        encrypt: process.env.DB_SERVER ? true : false,
+        trustServerCertificate: process.env.DB_SERVER ? false : true
     }
 };
 
