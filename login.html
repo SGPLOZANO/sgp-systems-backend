@@ -100,7 +100,8 @@
             divMensaje.className = "";
 
             try {
-                const respuesta = await fetch('http://localhost:3000/api/login', {
+                // CORRECCIÓN APLICADA: Ruta relativa en lugar de http://localhost:3000
+                const respuesta = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usuario: usuario, password: password })
@@ -109,7 +110,6 @@
                 const datos = await respuesta.json();
 
                 if (datos.success) {
-                    // Ahora lee exactamente la columna 'Usuario'
                     divMensaje.textContent = `¡Bienvenido ${datos.usuario.Usuario}! Redirigiendo... 🚀`;
                     divMensaje.className = "success";
                     
