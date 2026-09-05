@@ -13,13 +13,13 @@ app.use(express.static('./'));
 const PORT = process.env.PORT || 3000;
 
 const dbConfig = {
-    user: process.env.DB_USER || 'sa',
-    password: process.env.DB_PASSWORD || 'Sviet11062023*',
-    server: process.env.DB_SERVER || 'localhost',
-    database: process.env.DB_NAME || 'SistemaTransparencia',
+    user: 'sa', 
+    password: 'Sviet11062023*', 
+    server: 'localhost',
+    database: 'SistemaTransparencia',
     options: {
-        encrypt: process.env.DB_SERVER ? true : false,
-        trustServerCertificate: process.env.DB_SERVER ? false : true
+        encrypt: false,
+        trustServerCertificate: true
     }
 };
 
@@ -97,6 +97,7 @@ app.post('/api/login', async (req, res) => {
             res.json({ success: false, message: 'Usuario o contraseña incorrectos' });
         }
     } catch (err) {
+        console.error("ERROR DETALLADO EN LOGIN:", err);
         res.status(500).json({ success: false, message: 'Error de BD: ' + err.message });
     }
 });
