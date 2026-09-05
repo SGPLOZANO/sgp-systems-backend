@@ -614,7 +614,7 @@
 
         async function cargarOficinasSelector() {
             try {
-                const res = await fetch('http://localhost:3000/api/oficinas');
+                const res = await fetch('/api/oficinas');
                 listaOficinasGlobal = await res.json();
                 configurarBuscadorOficinas();
             } catch (err) { console.error("Error al cargar selector de oficinas:", err); }
@@ -647,7 +647,7 @@
 
         async function cargarTablaOficinas() {
             try {
-                const res = await fetch('http://localhost:3000/api/oficinas');
+                const res = await fetch('/api/oficinas');
                 listaOficinasGlobal = await res.json();
                 const tbody = document.getElementById('tablaOficinas'); tbody.innerHTML = '';
                 listaOficinasGlobal.forEach(o => {
@@ -681,7 +681,7 @@
                 responsable2: document.getElementById('responsable2').value
             };
             try {
-                await fetch(id ? `http://localhost:3000/api/oficinas/${id}` : 'http://localhost:3000/api/oficinas', { 
+                await fetch(id ? `/api/oficinas/${id}` : '/api/oficinas', { 
                     method: id ? 'PUT' : 'POST', 
                     headers: obtenerHeaders(), 
                     body: JSON.stringify(payload) 
@@ -708,7 +708,7 @@
         async function eliminarOficina(id) {
             if (await mostrarModal("¿Deshabilitar oficina?", "Sí", true)) {
                 try {
-                    await fetch(`http://localhost:3000/api/oficinas/${id}`, { method: 'DELETE', headers: obtenerHeaders() });
+                    await fetch(`/api/oficinas/${id}`, { method: 'DELETE', headers: obtenerHeaders() });
                     cargarTablaOficinas();
                 } catch (error) {
                     console.error("Error al eliminar oficina:", error);
@@ -719,7 +719,7 @@
 
         async function cargarEntregasPendientes() {
             try {
-                const res = await fetch('http://localhost:3000/api/entregas/pendientes');
+                const res = await fetch('/api/entregas/pendientes');
                 const data = await res.json();
                 if (data.success && data.entregas.length > 0) {
                     listaEntregasGlobal = data.entregas;
@@ -796,7 +796,7 @@
         async function registrarCarga(id) {
             if (await mostrarModal("¿Confirmar cumplimiento y reprogramar?", "Confirmar", true)) {
                 try {
-                    await fetch('http://localhost:3000/api/entregas/cargar', { 
+                    await fetch('/api/entregas/cargar', { 
                         method: 'POST', 
                         headers: obtenerHeaders(), 
                         body: JSON.stringify({ entregaId: id }) 
@@ -842,7 +842,7 @@
             }
 
             try {
-                await fetch(id ? `http://localhost:3000/api/entregas/${id}` : 'http://localhost:3000/api/entregas/nueva', { 
+                await fetch(id ? `/api/entregas/${id}` : '/api/entregas/nueva', { 
                     method: id ? 'PUT' : 'POST', 
                     headers: obtenerHeaders(true), 
                     body: formData 
@@ -896,7 +896,7 @@
                         let partes = archivoStr.split('|');
                         let nombreArchivo = partes[0];
                         let rutaArchivo = partes.length > 1 ? partes[1] : partes[0];
-                        let linkDescarga = rutaArchivo.startsWith('http') ? rutaArchivo : `http://localhost:3000/${rutaArchivo.startsWith('uploads') ? rutaArchivo : 'uploads/' + rutaArchivo}`;
+                        let linkDescarga = rutaArchivo.startsWith('http') ? rutaArchivo : `/${rutaArchivo.startsWith('uploads') ? rutaArchivo : 'uploads/' + rutaArchivo}`;
                         let esMemorando = (index === 0 && item.TipoDocumento === 'MEMORANDO');
 
                         const nuevaFila = document.createElement('div');
@@ -944,7 +944,7 @@
         async function eliminarEntrega(id) {
             if (await mostrarModal("¿Eliminar permanentemente?", "Sí", true)) {
                 try {
-                    await fetch(`http://localhost:3000/api/entregas/${id}`, { method: 'DELETE', headers: obtenerHeaders() });
+                    await fetch(`/api/entregas/${id}`, { method: 'DELETE', headers: obtenerHeaders() });
                     cargarEntregasPendientes();
                 } catch (error) {
                     console.error("Error al eliminar entrega:", error);
@@ -956,7 +956,7 @@
         /* LÓGICA DE HISTORIAL, FILTRADO POR FECHAS Y EXPORTACIÓN GERENCIAL */
         async function cargarHistorial() {
             try {
-                const res = await fetch('http://localhost:3000/api/entregas/historial');
+                const res = await fetch('/api/entregas/historial');
                 const data = await res.json();
                 if (data.success && data.entregas.length > 0) {
                     listaHistorialGlobal = data.entregas;
